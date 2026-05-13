@@ -3,50 +3,57 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
-// Pin Definitions
-#define PIR_SENSOR   PD2
-#define STATUS_LED   PD3
-#define ALERT_LED    PD4
-#define BUZZER       PD5
+
+// Function to generate tone
+void tone(unsigned int frequency, unsigned int duration_ms)
+{
+    unsigned long i;
+    unsigned long delay_us;
+
+    // Half period calculation
+    delay_us = 1000000UL / (frequency * 2);
+
+    // Generate square wave
+    for(i = 0; i < ((unsigned long)duration_ms * 1000UL) / (delay_us * 2); i++)
+    {
+        PORTD |= (1 << PD5);
+        _delay_us(delay_us);
+
+        PORTD &= ~(1 << PD5);
+        _delay_us(delay_us);
+    }
+}
 
 int main(void)
 {
-    // Configure LEDs and Buzzer as OUTPUT
+    // Configure LEDs and buzzer as OUTPUT
     DDRD |= (1 << PD3);
     DDRD |= (1 << PD4);
-    DDRD |= (1 << BUZZER);
+    DDRD |= (1 << PD5);
 
-    // Configure PIR Sensor as INPUT
+    // Configure PIR sensor as INPUT
     DDRD &= ~(1 << PD2);
 
-    while (1)
+    while(1)
     {
-        // Blink System Status LED
+        // Blink status LED
         PORTD |= (1 << PD3);
         _delay_ms(1000);
 
         PORTD &= ~(1 << PD3);
         _delay_ms(1000);
 
-        // Read PIR Sensor
-        if (PIND & (1 << PD2))
+        // Check PIR sensor
+        if(PIND & (1 << PD2))
         {
             // Motion detected
-
-            // Turn ON Alert LED
             PORTD |= (1 << PD4);
 
-            // Turn ON Buzzer
-            PORTD |= (1 << PD5);
+            // Generate buzzer sound
+            tone(1000, 5000);   // 1000Hz for 5 seconds
 
-            // Alarm duration (5 seconds)
-            _delay_ms(5000);
-
-            // Turn OFF Alert LED
+            // Turn OFF alert LED
             PORTD &= ~(1 << PD4);
-
-            // Turn OFF Buzzer
-            PORTD &= ~(1 << PD5);
         }
     }
 
